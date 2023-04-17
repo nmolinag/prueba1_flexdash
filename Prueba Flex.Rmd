@@ -1,0 +1,262 @@
+---
+title: "Análisis de Lista de Reproducción en Spotify"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      bg: "#101010"
+      fg: "#FDF7F7" 
+      primary: "#fafad2"
+      base_font:
+        google: Oswald
+      code_font:
+        google: JetBrains Mono
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(spotifyr)
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(rvest)
+library(stringr)
+library(ggplot2)
+library(hrbrthemes)
+library(plotly)
+library(GGally)
+
+bd_completa <- readRDS("datos_spotify.rds")
+
+normalz <-function(x){
+  z <- (x-mean(x))/sd(x)
+  return(z)
+}
+
+normalmm <- function(x){
+  m <- (x - min(x)) / (max(x) - min(x))
+  return(m)
+}
+
+bd_completa <- bd_completa %>% mutate(dance_norm = (normalz(bd_completa$danceability)))
+
+bd_completa <- bd_completa %>% mutate(energy_norm = (normalz(bd_completa$energy)))
+
+bd_completa <- bd_completa %>% mutate(val_norm = (normalz(bd_completa$valence)))
+
+bd_completa <- bd_completa %>% mutate(dance_mm = (normalmm(bd_completa$danceability)))
+
+bd_completa <- bd_completa %>% mutate(energy_mm = (normalmm(bd_completa$energy)))
+
+bd_completa <- bd_completa %>% mutate(val_mm = (normalmm(bd_completa$valence)))
+
+# Install thematic and un-comment for themed static plots (i.e., ggplot2)
+# thematic::thematic_rmd()
+```
+
+Propia
+===================================== 
+
+Column {data-width=700}
+-----------------------------------------------------------------------
+
+### Playlist propia
+
+```{r}
+annotations <- data.frame(
+  x = c(-Inf, -Inf, Inf, Inf),
+  y = c(-Inf, Inf, -Inf, Inf),
+  label = c("Triste/Deprimente", "Turbulenta/Enojada", "Calmada/Relajada", "Feliz/Alegre")
+)
+
+graf_1 <- ggplot(bd_completa %>% filter(pl == "PL1"), aes(x = val_norm, y = energy_norm, color = decada_f)) + 
+  theme_bw()+
+  geom_point(size = 2) +
+  labs(x = "valencia", y = "energia", color = "Decada") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black", size = 1) +
+  geom_text(
+    data = annotations,
+    aes(x, y, label = label),
+    hjust = c(0, 0, 1, 1),
+    vjust = c(-1.5, 2, -1.5, 2),
+    colour = "black",
+    fontface = "bold",
+    inherit.aes = FALSE
+  )
+
+graf_1
+```
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Distribucion por decada
+
+```{r}
+graf_2 <- ggplot(bd_completa %>% filter(pl == "PL1"), aes(x=as.factor(decada), fill=as.factor(decada) )) + 
+  geom_bar( ) +
+  scale_fill_hue(c = 100) +
+  xlab("Canciones por decada") +
+  ylab("") +
+  theme_bw() +
+  theme(legend.position="none") 
+ggplotly(graf_2, tooltip = "count")
+
+# geom_text(aes(label = after_stat(count)), stat = "count", vjust = -.5, colour = "black") + 
+```
+
+### Intercativo
+
+```{r}
+graf_1 <- ggplot(bd_completa %>% filter(pl == "PL1"), aes(x = val_norm, y = energy_norm, color = decada_f)) + 
+  theme_bw()+
+  geom_point(size = 2) +
+  labs(x = "valencia", y = "energia", color = "Decada") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black", size = 1)
+
+ggplotly(graf_1,
+         tooltip = c("colour")
+       )
+```
+
+
+Top 50 Global
+===================================== 
+
+Column {data-width=700}
+-----------------------------------------------------------------------
+
+### Playlist Top 50 Global
+
+```{r}
+annotations <- data.frame(
+  x = c(-Inf, -Inf, Inf, Inf),
+  y = c(-Inf, Inf, -Inf, Inf),
+  label = c("Triste/Deprimente", "Turbulenta/Enojada", "Calmada/Relajada", "Feliz/Alegre")
+)
+
+graf_1 <- ggplot(bd_completa %>% filter(pl == "PL2"), aes(x = val_norm, y = energy_norm, color = decada_f)) + 
+  theme_bw()+
+  geom_point(size = 2) +
+  labs(x = "valencia", y = "energia", color = "Decada") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black", size = 1) +
+  geom_text(
+    data = annotations,
+    aes(x, y, label = label),
+    hjust = c(0, 0, 1, 1),
+    vjust = c(-1.5, 2, -1.5, 2),
+    colour = "black",
+    fontface = "bold",
+    inherit.aes = FALSE
+  )
+
+graf_1
+```
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Distribucion por decada
+
+```{r}
+graf_2 <- ggplot(bd_completa %>% filter(pl == "PL2"), aes(x=as.factor(decada), fill=as.factor(decada) )) + 
+  geom_bar( ) +
+  scale_fill_hue(c = 100) +
+  xlab("Canciones por decada") +
+  ylab("") +
+  theme_bw() +
+  theme(legend.position="none") 
+ggplotly(graf_2, tooltip = "count")
+
+# geom_text(aes(label = after_stat(count)), stat = "count", vjust = -.5, colour = "black") + 
+```
+
+### Intercativo
+
+```{r}
+graf_1 <- ggplot(bd_completa %>% filter(pl == "PL2"), aes(x = val_norm, y = energy_norm, color = decada_f)) + 
+  theme_bw()+
+  geom_point(size = 2) +
+  labs(x = "valencia", y = "energia", color = "Decada") + 
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black", size = 1)
+
+ggplotly(graf_1,
+         tooltip = c("colour")
+       )
+```
+
+
+Min-Max
+===================================== 
+
+Column {data-width=700}
+-----------------------------------------------------------------------
+
+### Playlist propia
+
+```{r}
+annotations <- data.frame(
+  x = c(-Inf, -Inf, Inf, Inf),
+  y = c(-Inf, Inf, -Inf, Inf),
+  label = c("Triste/Deprimente", "Turbulenta/Enojada", "Calmada/Relajada", "Feliz/Alegre")
+)
+
+graf_1 <- ggplot(bd_completa %>% filter(pl == "PL1"), aes(x = val_mm, y = energy_mm, color = decada_f)) + 
+  theme_bw()+
+  geom_point(size = 2) +
+  labs(x = "valencia", y = "energia", color = "Decada") +
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "black", size = 1) +
+  geom_vline(xintercept = 0.5, linetype = "dashed", color = "black", size = 1) +
+  geom_text(
+    data = annotations,
+    aes(x, y, label = label),
+    hjust = c(0, 0, 1, 1),
+    vjust = c(-1.5, 2, -1.5, 2),
+    colour = "black",
+    fontface = "bold",
+    inherit.aes = FALSE
+  )
+
+graf_1
+```
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Distribucion por decada
+
+```{r}
+graf_2 <- ggplot(bd_completa %>% filter(pl == "PL1"), aes(x=as.factor(decada), fill=as.factor(decada) )) + 
+  geom_bar( ) +
+  scale_fill_hue(c = 100) +
+  xlab("Canciones por decada") +
+  ylab("") +
+  theme_bw() +
+  theme(legend.position="none") 
+ggplotly(graf_2, tooltip = "count")
+
+# geom_text(aes(label = after_stat(count)), stat = "count", vjust = -.5, colour = "black") + 
+```
+
+### Intercativo
+
+```{r}
+graf_1 <- ggplot(bd_completa %>% filter(pl == "PL1"), aes(x = val_mm, y = energy_mm, color = decada_f)) + 
+  theme_bw()+
+  geom_point(size = 2) +
+  labs(x = "valencia", y = "energia", color = "Decada") +
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "black", size = 1) +
+  geom_vline(xintercept = 0.5, linetype = "dashed", color = "black", size = 1)
+
+ggplotly(graf_1,
+         tooltip = c("colour")
+       )
+```
+
+
+
