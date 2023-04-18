@@ -259,4 +259,12 @@ ggplotly(graf_1,
 ```
 
 
+Grilla
+===================================== 
+
+### Grafico combinado
+
+```{r}
+ggpairs(bd_completa, columns = c(31, 32, 33), aes(color = decada_f, alpha = 0.5))
+```
 
